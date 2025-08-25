@@ -1,11 +1,25 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Button, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { getDocument, updateDocument } from '../../src/services/db';
-import { collection, onSnapshot, addDoc, query, orderBy } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { useSelector } from 'react-redux';
+import { getDocument } from '../../src/services/db';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../src/store';
+import { ChatBubble } from '../../src/components/ChatBubble';
+import { MessageInput } from '../../src/components/MessageInput';
+import { 
+  setMessages, 
+  addMessage, 
+  updateMessageStatus,
+  setTyping 
+} from '../../src/features/chat/chatSlice';
+import { 
+  sendMessage, 
+  subscribeToMessages, 
+  markMessagesAsRead,
+  updateMessageStatus as updateMessageStatusService 
+} from '../../src/services/chatService';
+import { Message, MessageType } from '../../src/utils/types';
+import { Ionicons } from '@expo/vector-icons';
 
 const statusLabels: Record<string, string> = {
   pending: 'Ожидание',
@@ -21,10 +35,11 @@ export default function OrderScreen() {
   const { orderId } = useLocalSearchParams();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [msg, setMsg] = useState('');
   const [sending, setSending] = useState(false);
   const user = useSelector((s: RootState) => s.auth.user);
+  const messages = useSelector((s: RootState) => s.chat.messages[orderId as string] || []);
+  const typing = useSelector((s: RootState) => s.chat.typing[orderId as string] || []);
+  const dispatch = useDispatch();
   const router = useRouter();
   const flatListRef = useRef<FlatList>(null);
 
@@ -38,81 +53,131 @@ export default function OrderScreen() {
     fetchOrder();
   }, [orderId]);
 
-  // Subscribe to messages
+  // Подписка на сообщения
   useEffect(() => {
     if (!orderId) return;
-    const db = getFirestore();
-    const q = query(collection(db, `orders/${orderId}/messages`), orderBy('createdAt', 'asc'));
-    const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    
+    const unsubscribe = subscribeToMessages(orderId as string, (newMessages) => {
+      dispatch(setMessages({ orderId: orderId as string, messages: newMessages }));
+      
+      // Автоскролл к последнему сообщению
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     });
-    return () => unsub();
-  }, [orderId]);
 
-  const sendMessage = async () => {
-    if (!msg.trim() || !user) return;
+    return () => unsubscribe();
+  }, [orderId, dispatch]);
+
+  // Отметить сообщения как прочитанные
+  useEffect(() => {
+    if (user && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        msg => msg.senderId !== user.id && msg.status !== 'read'
+      );
+      if (unreadMessages.length > 0) {
+        markMessagesAsRead(orderId as string, user.id);
+      }
+    }
+  }, [messages, user, orderId]);
+
+  const handleSendMessage = async (text: string, type: MessageType, mediaUrl?: string) => {
+    if (!user || !orderId) return;
+    
     setSending(true);
     try {
-      const db = getFirestore();
-      await addDoc(collection(db, `orders/${orderId}/messages`), {
+      const messageData = {
+        orderId: orderId as string,
         senderId: user.id,
-        text: msg.trim(),
+        text: type === 'text' ? text : '',
+        type,
+        mediaUrl,
+        status: 'sent' as const,
+      };
+
+      const messageId = await sendMessage(orderId as string, messageData);
+      
+      // Добавляем сообщение в Redux
+      const newMessage: Message = {
+        id: messageId,
+        ...messageData,
         createdAt: Date.now(),
-      });
-      setMsg('');
-    } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось отправить сообщение');
+      };
+      
+      dispatch(addMessage({ orderId: orderId as string, message: newMessage }));
+      
+      // Обновляем статус на "доставлено"
+      setTimeout(() => {
+        updateMessageStatusService(orderId as string, messageId, 'delivered');
+        dispatch(updateMessageStatus({ orderId: orderId as string, messageId, status: 'delivered' }));
+      }, 1000);
+      
+    } catch (error: any) {
+      Alert.alert('Ошибка', error.message || 'Не удалось отправить сообщение');
     } finally {
       setSending(false);
     }
   };
 
-  const cancelOrder = async () => {
-    if (!orderId) return;
-    try {
-      await updateDocument(`orders/${orderId}`, { status: 'cancelled', updatedAt: Date.now() });
-      router.replace('/');
-    } catch (e: any) {
-      Alert.alert('Ошибка', e.message || 'Не удалось отменить заказ');
-    }
+  const handleTyping = (isTyping: boolean) => {
+    if (!user || !orderId) return;
+    dispatch(setTyping({ orderId: orderId as string, userId: user.id, isTyping }));
+  };
+
+  const handleImagePress = (imageUrl: string) => {
+    // TODO: Открыть изображение в полноэкранном режиме
+    Alert.alert('Изображение', 'Просмотр изображений будет доступен в следующем обновлении');
+  };
+
+  const handleReviewPress = () => {
+    router.push(`/review/${orderId}`);
   };
 
   if (loading) return <Text style={styles.loading}>Загрузка...</Text>;
   if (!order) return <Text style={styles.error}>Заказ не найден</Text>;
 
+  const isOwnMessage = (message: Message) => message.senderId === user?.id;
+  const isCompleted = order.status === 'completed';
   const isBuyer = user && user.id === order.buyerId;
-  const canCancel = isBuyer && order.status === 'pending';
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.container}>
-        <Text style={styles.status}>Статус: {statusLabels[order.status] || order.status}</Text>
+        <View style={styles.header}>
+          <Text style={styles.status}>Статус: {statusLabels[order.status] || order.status}</Text>
+          {typing.length > 0 && (
+            <Text style={styles.typing}>
+              {typing.filter(id => id !== user?.id).length > 0 ? 'Печатает...' : ''}
+            </Text>
+          )}
+          {isCompleted && isBuyer && (
+            <TouchableOpacity style={styles.reviewButton} onPress={handleReviewPress}>
+              <Ionicons name="star" size={16} color="#fff" />
+              <Text style={styles.reviewButtonText}>Оставить отзыв</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
         <FlatList
           ref={flatListRef}
           data={messages}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <View style={[styles.msg, item.senderId === user?.id ? styles.myMsg : styles.otherMsg]}>
-              <Text>{item.text}</Text>
-              <Text style={styles.msgTime}>{new Date(item.createdAt).toLocaleTimeString()}</Text>
-            </View>
+            <ChatBubble
+              message={item}
+              isOwnMessage={isOwnMessage(item)}
+              onImagePress={handleImagePress}
+            />
           )}
           contentContainerStyle={{ paddingVertical: 12 }}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
         />
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.input}
-            placeholder="Сообщение..."
-            value={msg}
-            onChangeText={setMsg}
-            editable={!sending}
-          />
-          <Button title="Отправить" onPress={sendMessage} disabled={sending || !msg.trim()} />
-        </View>
-        {canCancel && (
-          <Button title="Отменить заказ" color="#d00" onPress={cancelOrder} />
-        )}
+        
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          onTyping={handleTyping}
+          disabled={sending}
+        />
       </View>
     </KeyboardAvoidingView>
   );
@@ -122,13 +187,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
     padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#f8f8f8',
   },
   status: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 8,
     textAlign: 'center',
+  },
+  typing: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  reviewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  reviewButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
   loading: {
     flex: 1,
@@ -141,40 +231,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 32,
     fontSize: 18,
-  },
-  msg: {
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 4,
-    maxWidth: '80%',
-  },
-  myMsg: {
-    backgroundColor: '#e0f7fa',
-    alignSelf: 'flex-end',
-  },
-  otherMsg: {
-    backgroundColor: '#f1f1f1',
-    alignSelf: 'flex-start',
-  },
-  msgTime: {
-    fontSize: 10,
-    color: '#888',
-    marginTop: 2,
-    textAlign: 'right',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginRight: 8,
-    fontSize: 16,
   },
 });

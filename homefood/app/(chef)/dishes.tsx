@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../src/store';
 import { queryCollection } from '../../src/services/db';
 import { DishCard } from '../../src/components/DishCard';
+import { EmptyState } from '../../src/components/EmptyState';
 
 export default function ChefDishesScreen() {
   const router = useRouter();
@@ -49,7 +50,13 @@ export default function ChefDishesScreen() {
               </TouchableOpacity>
             </View>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>Нет блюд</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              title="У вас пока нет блюд"
+              description="Создайте первое блюдо, чтобы начать продажи"
+              icon="👨‍🍳"
+            />
+          }
         />
       )}
     </View>

@@ -63,6 +63,15 @@ export default function DishDetailScreen() {
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} size="large" color="#0a7ea4" />;
   if (!dish) return <Text style={styles.error}>Блюдо не найдено</Text>;
+  if (dish.status !== 'active') {
+    return (
+      <View style={styles.container}>
+        <Image source={{ uri: dish.photoURL }} style={styles.image} />
+        <Text style={styles.title}>{dish.title}</Text>
+        <Text style={styles.error}>Это блюдо временно недоступно для заказа</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

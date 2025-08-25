@@ -5,6 +5,7 @@ import { RootState } from '../../src/store';
 import { queryCollection, updateDocument } from '../../src/services/db';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import { EmptyState } from '../../src/components/EmptyState';
 
 const statusTabs = [
   { label: 'Ожидание', value: 'pending' },
@@ -101,7 +102,13 @@ export default function ChefOrdersScreen() {
               </View>
             </View>
           )}
-          ListEmptyComponent={<Text style={styles.empty}>Нет заказов</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              title="Нет заказов"
+              description="Заказы появятся здесь, когда покупатели начнут заказывать ваши блюда"
+              icon="📋"
+            />
+          }
         />
       )}
     </View>

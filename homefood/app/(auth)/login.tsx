@@ -20,7 +20,7 @@ export default function LoginScreen() {
   const onSubmit = async (data: any) => {
     try {
       await signIn(data.email, data.password);
-      router.replace('/');
+      router.replace('/(tabs)/');
     } catch (e: any) {
       alert(e.message || 'Ошибка входа');
     }

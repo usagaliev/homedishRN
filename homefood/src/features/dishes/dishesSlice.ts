@@ -1,19 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface Dish {
-  id: string;
-  chefId: string;
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  photoURL: string;
-  location?: { lat: number; lng: number };
-  availableQty: number;
-  status: string;
-  createdAt: number;
-  updatedAt: number;
-}
+import { Dish } from '../../utils/types';
 
 interface DishesState {
   list: Dish[];

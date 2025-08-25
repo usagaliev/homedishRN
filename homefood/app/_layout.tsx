@@ -19,7 +19,14 @@ export default function RootLayout() {
       <Providers>
         <ThemeProvider>
           <SafeAreaProvider>
-            <Stack />
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(chef)" options={{ headerShown: false }} />
+              <Stack.Screen name="order/[orderId]" options={{ headerShown: false }} />
+              <Stack.Screen name="review/[orderId]" options={{ headerShown: false }} />
+              <Stack.Screen name="chef/[chefId]" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            </Stack>
             <Toast />
           </SafeAreaProvider>
         </ThemeProvider>

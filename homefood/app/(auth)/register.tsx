@@ -7,6 +7,7 @@ import { signUp } from '../../src/services/auth';
 import { useRouter } from 'expo-router';
 
 const schema = yup.object().shape({
+  displayName: yup.string().min(2, 'Минимум 2 символа').required('Имя обязательно'),
   email: yup.string().email('Некорректный email').required('Email обязателен'),
   password: yup.string().min(6, 'Минимум 6 символов').required('Пароль обязателен'),
 });
@@ -19,8 +20,8 @@ export default function RegisterScreen() {
 
   const onSubmit = async (data: any) => {
     try {
-      await signUp(data.email, data.password);
-      router.replace('/');
+      await signUp(data.email, data.password, data.displayName);
+      router.replace('/(tabs)/');
     } catch (e: any) {
       alert(e.message || 'Ошибка регистрации');
     }
@@ -29,6 +30,20 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Регистрация</Text>
+      <Controller
+        control={control}
+        name="displayName"
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={styles.input}
+            placeholder="Ваше имя"
+            autoCapitalize="words"
+            value={value}
+            onChangeText={onChange}
+          />
+        )}
+      />
+      {errors.displayName && <Text style={styles.error}>{errors.displayName.message}</Text>}
       <Controller
         control={control}
         name="email"

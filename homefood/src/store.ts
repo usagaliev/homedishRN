@@ -3,6 +3,8 @@ import authReducer from './features/auth/authSlice';
 import dishesReducer from './features/dishes/dishesSlice';
 import ordersReducer from './features/orders/ordersSlice';
 import userReducer from './features/user/userSlice';
+import chatReducer from './features/chat/chatSlice';
+import reviewsReducer from './features/reviews/reviewsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +12,8 @@ export const store = configureStore({
     dishes: dishesReducer,
     orders: ordersReducer,
     user: userReducer,
+    chat: chatReducer,
+    reviews: reviewsReducer,
   },
 });
 

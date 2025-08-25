@@ -13,10 +13,15 @@ export default function ChefLayout() {
   }, []);
 
   useEffect(() => {
-    if (mounted && !user) {
-      router.replace('/(auth)/login');
+    if (mounted) {
+      if (!user) {
+        router.replace('/(auth)/login');
+      } else if (user.role !== 'chef') {
+        // Если пользователь не повар, перенаправляем на главный экран
+        router.replace('/(tabs)/');
+      }
     }
-  }, [mounted, user]);
+  }, [mounted, user, router]);
 
   return <Slot />;
 }

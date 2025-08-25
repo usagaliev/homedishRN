@@ -31,3 +31,18 @@ export async function queryCollection(collectionPath: string, constraints: Query
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
+
+// Функция для совместимости с существующим кодом
+export async function getDocuments(queryString: string) {
+  const [collectionPath, ...filters] = queryString.split('?');
+  const constraints: QueryConstraint[] = [];
+  
+  filters.forEach(filter => {
+    const [field, value] = filter.split('=');
+    if (field && value) {
+      constraints.push(where(field, '==', value));
+    }
+  });
+  
+  return queryCollection(collectionPath, constraints);
+}

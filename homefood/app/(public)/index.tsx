@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Button } from 'react-native';
 import * as Location from 'expo-location';
 import { useDispatch, useSelector } from 'react-redux';
 import { setLocation } from '../../src/features/user/userSlice';
@@ -10,6 +10,7 @@ import { getDistanceKm } from '../../src/utils/geo';
 import { DishCard } from '../../src/components/DishCard';
 import { useRouter } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
+import { EmptyState } from '../../src/components/EmptyState';
 
 const categories = [
   { label: 'Все', value: '' },
@@ -71,7 +72,10 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Блюда рядом</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Блюда рядом</Text>
+        <Button title="Профиль" onPress={() => router.push('/(public)/profile')} />
+      </View>
       <Text style={{ color: 'red', fontSize: 12, marginBottom: 8 }}>user: {JSON.stringify(user)}</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <View style={styles.filters}>
@@ -107,11 +111,17 @@ export default function HomeScreen() {
               price={item.price}
               category={item.category}
               photoURL={item.photoURL}
-              distanceKm={userLocation && item.location ? getDistanceKm(userLocation.lat, userLocation.lng, dish.location.lat, dish.location.lng) : undefined}
+              distanceKm={userLocation && item.location ? getDistanceKm(userLocation.lat, userLocation.lng, item.location.lat, item.location.lng) : undefined}
               onPress={() => router.push(`/dish/${item.id}`)}
             />
           )}
-          ListEmptyComponent={<Text style={styles.empty}>Нет блюд</Text>}
+          ListEmptyComponent={
+            <EmptyState
+              title="Нет блюд поблизости"
+              description="Попробуйте увеличить радиус поиска или изменить фильтры"
+              icon="🍽️"
+            />
+          }
         />
       )}
     </View>
@@ -124,6 +134,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingTop: 24,
     paddingHorizontal: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   title: {
     fontSize: 24,
