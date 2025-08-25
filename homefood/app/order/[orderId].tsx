@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getDocument } from '../../src/services/db';
 import { useSelector, useDispatch } from 'react-redux';
@@ -86,14 +86,18 @@ export default function OrderScreen() {
     
     setSending(true);
     try {
-      const messageData = {
+      const messageData: any = {
         orderId: orderId as string,
         senderId: user.id,
         text: type === 'text' ? text : '',
         type,
-        mediaUrl,
         status: 'sent' as const,
       };
+
+      // Добавляем mediaUrl только если он определен
+      if (mediaUrl) {
+        messageData.mediaUrl = mediaUrl;
+      }
 
       const messageId = await sendMessage(orderId as string, messageData);
       
@@ -141,45 +145,47 @@ export default function OrderScreen() {
   const isBuyer = user && user.id === order.buyerId;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.status}>Статус: {statusLabels[order.status] || order.status}</Text>
-          {typing.length > 0 && (
-            <Text style={styles.typing}>
-              {typing.filter(id => id !== user?.id).length > 0 ? 'Печатает...' : ''}
-            </Text>
-          )}
-          {isCompleted && isBuyer && (
-            <TouchableOpacity style={styles.reviewButton} onPress={handleReviewPress}>
-              <Ionicons name="star" size={16} color="#fff" />
-              <Text style={styles.reviewButtonText}>Оставить отзыв</Text>
-            </TouchableOpacity>
-          )}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.status}>Статус: {statusLabels[order.status] || order.status}</Text>
+            {typing.length > 0 && (
+              <Text style={styles.typing}>
+                {typing.filter(id => id !== user?.id).length > 0 ? 'Печатает...' : ''}
+              </Text>
+            )}
+            {isCompleted && isBuyer && (
+              <TouchableOpacity style={styles.reviewButton} onPress={handleReviewPress}>
+                <Ionicons name="star" size={16} color="#fff" />
+                <Text style={styles.reviewButtonText}>Оставить отзыв</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
+            renderItem={({ item }) => (
+              <ChatBubble
+                message={item}
+                isOwnMessage={isOwnMessage(item)}
+                onImagePress={handleImagePress}
+              />
+            )}
+            contentContainerStyle={{ paddingVertical: 12 }}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          />
+          
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            onTyping={handleTyping}
+            disabled={sending}
+          />
         </View>
-        
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <ChatBubble
-              message={item}
-              isOwnMessage={isOwnMessage(item)}
-              onImagePress={handleImagePress}
-            />
-          )}
-          contentContainerStyle={{ paddingVertical: 12 }}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-        />
-        
-        <MessageInput
-          onSendMessage={handleSendMessage}
-          onTyping={handleTyping}
-          disabled={sending}
-        />
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator, TextInput, Button, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator, TextInput, Button, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getDocument, addDocument } from '../../src/services/db';
 import { useForm, Controller } from 'react-hook-form';
@@ -74,60 +74,62 @@ export default function DishDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Image source={{ uri: dish.photoURL }} style={styles.image} />
-      <Text style={styles.title}>{dish.title}</Text>
-      <Text style={styles.price}>{dish.price} ₽</Text>
-      <Text style={styles.category}>{dish.category}</Text>
-      <Text style={styles.desc}>{dish.description}</Text>
-      <Text style={styles.label}>Заказать</Text>
-      <Controller
-        control={control}
-        name="qty"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Количество"
-            keyboardType="numeric"
-            value={String(value)}
-            onChangeText={v => onChange(Number(v.replace(/[^0-9]/g, '')))}
-          />
-        )}
-      />
-      {errors.qty && <Text style={styles.error}>{errors.qty.message}</Text>}
-      <Controller
-        control={control}
-        name="deliveryType"
-        render={({ field: { onChange, value } }) => (
-          <View style={styles.row}>
-            {deliveryTypes.map(dt => (
-              <Button
-                key={dt.value}
-                title={dt.label}
-                color={value === dt.value ? '#0a7ea4' : '#ccc'}
-                onPress={() => onChange(dt.value)}
-              />
-            ))}
-          </View>
-        )}
-      />
-      {errors.deliveryType && <Text style={styles.error}>{errors.deliveryType.message}</Text>}
-      <Controller
-        control={control}
-        name="note"
-        render={({ field: { onChange, value } }) => (
-          <TextInput
-            style={styles.input}
-            placeholder="Комментарий к заказу (необязательно)"
-            value={value}
-            onChangeText={onChange}
-            multiline
-          />
-        )}
-      />
-      {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
-      <Button title={isSubmitting ? 'Оформляем...' : 'Оформить заказ'} onPress={handleSubmit(onSubmit)} disabled={isSubmitting} />
-    </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Image source={{ uri: dish.photoURL }} style={styles.image} />
+        <Text style={styles.title}>{dish.title}</Text>
+        <Text style={styles.price}>{dish.price} ₽</Text>
+        <Text style={styles.category}>{dish.category}</Text>
+        <Text style={styles.desc}>{dish.description}</Text>
+        <Text style={styles.label}>Заказать</Text>
+        <Controller
+          control={control}
+          name="qty"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Количество"
+              keyboardType="numeric"
+              value={String(value)}
+              onChangeText={v => onChange(Number(v.replace(/[^0-9]/g, '')))}
+            />
+          )}
+        />
+        {errors.qty && <Text style={styles.error}>{errors.qty.message}</Text>}
+        <Controller
+          control={control}
+          name="deliveryType"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.row}>
+              {deliveryTypes.map(dt => (
+                <Button
+                  key={dt.value}
+                  title={dt.label}
+                  color={value === dt.value ? '#0a7ea4' : '#ccc'}
+                  onPress={() => onChange(dt.value)}
+                />
+              ))}
+            </View>
+          )}
+        />
+        {errors.deliveryType && <Text style={styles.error}>{errors.deliveryType.message}</Text>}
+        <Controller
+          control={control}
+          name="note"
+          render={({ field: { onChange, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="Комментарий к заказу (необязательно)"
+              value={value}
+              onChangeText={onChange}
+              multiline
+            />
+          )}
+        />
+        {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
+        <Button title={isSubmitting ? 'Оформляем...' : 'Оформить заказ'} onPress={handleSubmit(onSubmit)} disabled={isSubmitting} />
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

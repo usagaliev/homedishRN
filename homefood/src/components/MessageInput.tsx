@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { MessageType } from '../utils/types';
@@ -35,7 +35,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const handlePhoto = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaType.Images,
         quality: 0.8,
         allowsEditing: true,
         aspect: [4, 3],
@@ -60,48 +60,50 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const canSend = text.trim().length > 0 && !disabled;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.inputContainer}>
-        <TouchableOpacity 
-          style={styles.attachButton} 
-          onPress={handlePhoto}
-          disabled={disabled}
-        >
-          <Ionicons name="camera" size={24} color="#666" />
-        </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.inputContainer}>
+          <TouchableOpacity 
+            style={styles.attachButton} 
+            onPress={handlePhoto}
+            disabled={disabled}
+          >
+            <Ionicons name="camera" size={24} color="#666" />
+          </TouchableOpacity>
+          
+          <TextInput
+            ref={inputRef}
+            style={styles.textInput}
+            value={text}
+            onChangeText={handleTyping}
+            placeholder="Введите сообщение..."
+            multiline
+            maxLength={1000}
+            editable={!disabled}
+          />
+          
+          <TouchableOpacity 
+            style={styles.voiceButton} 
+            onPress={handleVoice}
+            disabled={disabled}
+          >
+            <Ionicons name="mic" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
         
-        <TextInput
-          ref={inputRef}
-          style={styles.textInput}
-          value={text}
-          onChangeText={handleTyping}
-          placeholder="Введите сообщение..."
-          multiline
-          maxLength={1000}
-          editable={!disabled}
-        />
-        
-        <TouchableOpacity 
-          style={styles.voiceButton} 
-          onPress={handleVoice}
-          disabled={disabled}
+        <TouchableOpacity
+          style={[styles.sendButton, canSend && styles.sendButtonActive]}
+          onPress={handleSend}
+          disabled={!canSend}
         >
-          <Ionicons name="mic" size={24} color="#666" />
+          <Ionicons 
+            name="send" 
+            size={20} 
+            color={canSend ? '#fff' : '#ccc'} 
+          />
         </TouchableOpacity>
       </View>
-      
-      <TouchableOpacity
-        style={[styles.sendButton, canSend && styles.sendButtonActive]}
-        onPress={handleSend}
-        disabled={!canSend}
-      >
-        <Ionicons 
-          name="send" 
-          size={20} 
-          color={canSend ? '#fff' : '#ccc'} 
-        />
-      </TouchableOpacity>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 

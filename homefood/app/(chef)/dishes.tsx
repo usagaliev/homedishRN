@@ -38,11 +38,7 @@ export default function ChefDishesScreen() {
           renderItem={({ item }) => (
             <View style={styles.dishRow}>
               <DishCard
-                id={item.id}
-                title={item.title}
-                price={item.price}
-                category={item.category}
-                photoURL={item.photoURL}
+                dish={item}
                 onPress={() => router.push(`/dish/${item.id}`)}
               />
               <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: '/(chef)/dish-edit', params: { dishId: item.id } })}>

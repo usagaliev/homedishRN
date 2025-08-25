@@ -1,9 +1,7 @@
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, User } from 'firebase/auth';
-import { app } from './firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, User } from 'firebase/auth';
+import { auth } from './firebase';
 import { setDocument } from './db';
 import { AppUser } from '../utils/types';
-
-const auth = getAuth(app);
 
 export async function signUp(email: string, password: string, displayName?: string) {
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);

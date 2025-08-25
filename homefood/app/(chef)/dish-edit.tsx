@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Image, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { dishSchema } from '../../src/utils/validators';
@@ -97,62 +97,64 @@ export default function DishEditScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{isEdit ? 'Редактировать блюдо' : 'Новое блюдо'}</Text>
-      <Controller
-        control={control}
-        name="title"
-        render={({ field: { onChange, value } }) => (
-          <TextInput style={styles.input} placeholder="Название" value={value} onChangeText={onChange} />
-        )}
-      />
-      {errors.title && <Text style={styles.error}>{errors.title.message}</Text>}
-      <Controller
-        control={control}
-        name="description"
-        render={({ field: { onChange, value } }) => (
-          <TextInput style={styles.input} placeholder="Описание" value={value} onChangeText={onChange} multiline />
-        )}
-      />
-      {errors.description && <Text style={styles.error}>{errors.description.message}</Text>}
-      <Controller
-        control={control}
-        name="price"
-        render={({ field: { onChange, value } }) => (
-          <TextInput style={styles.input} placeholder="Цена" value={String(value)} onChangeText={onChange} keyboardType="numeric" />
-        )}
-      />
-      {errors.price && <Text style={styles.error}>{errors.price.message}</Text>}
-      <Controller
-        control={control}
-        name="category"
-        render={({ field: { onChange, value } }) => (
-          <View style={styles.pickerWrap}>
-            <Text style={styles.label}>Категория:</Text>
-            <View style={styles.pickerRow}>
-              {categories.map(c => (
-                <Button key={c.value} title={c.label} color={value === c.value ? '#0a7ea4' : '#ccc'} onPress={() => onChange(c.value)} />
-              ))}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>{isEdit ? 'Редактировать блюдо' : 'Новое блюдо'}</Text>
+        <Controller
+          control={control}
+          name="title"
+          render={({ field: { onChange, value } }) => (
+            <TextInput style={styles.input} placeholder="Название" value={value} onChangeText={onChange} />
+          )}
+        />
+        {errors.title && <Text style={styles.error}>{errors.title.message}</Text>}
+        <Controller
+          control={control}
+          name="description"
+          render={({ field: { onChange, value } }) => (
+            <TextInput style={styles.input} placeholder="Описание" value={value} onChangeText={onChange} multiline />
+          )}
+        />
+        {errors.description && <Text style={styles.error}>{errors.description.message}</Text>}
+        <Controller
+          control={control}
+          name="price"
+          render={({ field: { onChange, value } }) => (
+            <TextInput style={styles.input} placeholder="Цена" value={String(value)} onChangeText={onChange} keyboardType="numeric" />
+          )}
+        />
+        {errors.price && <Text style={styles.error}>{errors.price.message}</Text>}
+        <Controller
+          control={control}
+          name="category"
+          render={({ field: { onChange, value } }) => (
+            <View style={styles.pickerWrap}>
+              <Text style={styles.label}>Категория:</Text>
+              <View style={styles.pickerRow}>
+                {categories.map(c => (
+                  <Button key={c.value} title={c.label} color={value === c.value ? '#0a7ea4' : '#ccc'} onPress={() => onChange(c.value)} />
+                ))}
+              </View>
             </View>
-          </View>
-        )}
-      />
-      {errors.category && <Text style={styles.error}>{errors.category.message}</Text>}
-      <View style={styles.imageWrap}>
-        {image ? <Image source={{ uri: image }} style={styles.image} /> : null}
-        <Button title={image ? 'Заменить фото' : 'Загрузить фото'} onPress={pickImage} />
+          )}
+        />
+        {errors.category && <Text style={styles.error}>{errors.category.message}</Text>}
+        <View style={styles.imageWrap}>
+          {image ? <Image source={{ uri: image }} style={styles.image} /> : null}
+          <Button title={image ? 'Заменить фото' : 'Загрузить фото'} onPress={pickImage} />
+        </View>
+        {errors.photoURL && <Text style={styles.error}>{errors.photoURL.message}</Text>}
+        <Controller
+          control={control}
+          name="availableQty"
+          render={({ field: { onChange, value } }) => (
+            <TextInput style={styles.input} placeholder="Доступно порций" value={String(value)} onChangeText={onChange} keyboardType="numeric" />
+          )}
+        />
+        {errors.availableQty && <Text style={styles.error}>{errors.availableQty.message}</Text>}
+        <Button title={uploading || isSubmitting ? 'Сохраняем...' : isEdit ? 'Сохранить' : 'Добавить'} onPress={handleSubmit(onSubmit)} disabled={uploading || isSubmitting} />
       </View>
-      {errors.photoURL && <Text style={styles.error}>{errors.photoURL.message}</Text>}
-      <Controller
-        control={control}
-        name="availableQty"
-        render={({ field: { onChange, value } }) => (
-          <TextInput style={styles.input} placeholder="Доступно порций" value={String(value)} onChangeText={onChange} keyboardType="numeric" />
-        )}
-      />
-      {errors.availableQty && <Text style={styles.error}>{errors.availableQty.message}</Text>}
-      <Button title={uploading || isSubmitting ? 'Сохраняем...' : isEdit ? 'Сохранить' : 'Добавить'} onPress={handleSubmit(onSubmit)} disabled={uploading || isSubmitting} />
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
 

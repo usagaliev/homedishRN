@@ -1,18 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface EmptyStateProps {
   title: string;
   description?: string;
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  actionText?: string;
+  onAction?: () => void;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, icon }) => {
+export const EmptyState: React.FC<EmptyStateProps> = ({ title, description, icon, actionText, onAction }) => {
   return (
     <View style={styles.container}>
-      {icon && <Text style={styles.icon}>{icon}</Text>}
+      {icon && <Ionicons name={icon} size={64} color="#ccc" style={styles.icon} />}
       <Text style={styles.title}>{title}</Text>
       {description && <Text style={styles.description}>{description}</Text>}
+      {actionText && onAction && (
+        <TouchableOpacity style={styles.actionButton} onPress={onAction}>
+          <Text style={styles.actionText}>{actionText}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -25,7 +33,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   icon: {
-    fontSize: 48,
     marginBottom: 16,
   },
   title: {
@@ -39,6 +46,18 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  actionButton: {
+    marginTop: 16,
+    backgroundColor: '#0a7ea4',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  actionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

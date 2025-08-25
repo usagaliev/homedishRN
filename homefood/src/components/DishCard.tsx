@@ -7,13 +7,19 @@ import { RatingStars } from './RatingStars';
 import { Dish } from '../utils/types';
 
 interface DishCardProps {
-  dish: Dish;
+  dish: Dish | null | undefined;
   onPress?: () => void;
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ dish, onPress }) => {
   const router = useRouter();
   const chefRatings = useSelector((s: RootState) => s.reviews.chefRatings);
+  
+  // Проверяем, что dish существует и имеет необходимые поля
+  if (!dish || !dish.id || !dish.chefId) {
+    return null;
+  }
+  
   const rating = chefRatings[dish.chefId] || { average: 0, count: 0 };
 
   const handlePress = () => {

@@ -43,7 +43,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      {user?.role === 'chef' && (
+      {user?.role === 'chef' ? (
         <Tabs.Screen
           name="add-dish"
           options={{
@@ -51,7 +51,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size} color={color} />,
           }}
         />
-      )}
+      ) : null}
       <Tabs.Screen
         name="profile"
         options={{

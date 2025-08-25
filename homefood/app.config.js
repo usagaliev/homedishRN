@@ -3,6 +3,7 @@ module.exports = () => ({
     name: 'homefood',
     slug: 'homefood',
     version: '1.0.0',
+    scheme: 'homefood',
     extra: {
       firebaseApiKey: process.env.FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,

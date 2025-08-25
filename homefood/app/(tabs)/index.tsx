@@ -5,16 +5,19 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../src/store';
 import { getDocuments } from '../../src/services/db';
 import { DishCard } from '../../src/components/DishCard';
+import { EmptyState } from '../../src/components/EmptyState';
+import { LoadingSpinner } from '../../src/components/LoadingSpinner';
+import { ErrorState } from '../../src/components/ErrorState';
 import { setDishes } from '../../src/features/dishes/dishesSlice';
 import { Dish } from '../../src/utils/types';
 import { Ionicons } from '@expo/vector-icons';
 
 const categories = [
   { id: 'all', name: 'Все', icon: 'restaurant' },
-  { id: 'soup', name: 'Супы', icon: 'bowl' },
+  { id: 'soup', name: 'Супы', icon: 'water' },
   { id: 'main', name: 'Основные', icon: 'restaurant' },
   { id: 'salad', name: 'Салаты', icon: 'leaf' },
-  { id: 'bakery', name: 'Выпечка', icon: 'bread' },
+  { id: 'bakery', name: 'Выпечка', icon: 'pizza' },
   { id: 'vegan', name: 'Веган', icon: 'leaf' },
   { id: 'other', name: 'Другое', icon: 'ellipsis-horizontal' },
 ];
@@ -22,6 +25,7 @@ const categories = [
 export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const dishes = useSelector((s: RootState) => s.dishes.list);
   const dispatch = useDispatch();
   const router = useRouter();
@@ -32,12 +36,13 @@ export default function HomeScreen() {
 
   const fetchDishes = async () => {
     setLoading(true);
+    setError(null);
     try {
       const dishesData = await getDocuments('dishes?status=active') as Dish[];
       dispatch(setDishes(dishesData));
     } catch (error) {
       console.error('Error fetching dishes:', error);
-      Alert.alert('Ошибка', 'Не удалось загрузить блюда');
+      setError('Не удалось загрузить блюда');
     } finally {
       setLoading(false);
     }
@@ -78,10 +83,16 @@ export default function HomeScreen() {
   );
 
   if (loading) {
+    return <LoadingSpinner message="Загрузка блюд..." />;
+  }
+
+  if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text>Загрузка блюд...</Text>
-      </View>
+      <ErrorState 
+        title="Ошибка загрузки"
+        message={error}
+        onRetry={fetchDishes}
+      />
     );
   }
 
@@ -110,16 +121,29 @@ export default function HomeScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.dishesList}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {selectedCategory === 'all' 
-                ? 'Пока нет доступных блюд' 
-                : `Нет блюд в категории "${categories.find(c => c.id === selectedCategory)?.name}"`
-              }
-            </Text>
-          </View>
-        }
+                          ListEmptyComponent={
+                    <EmptyState
+                      title={
+                        selectedCategory === 'all'
+                          ? 'Пока нет доступных блюд'
+                          : `Нет блюд в категории "${categories.find(c => c.id === selectedCategory)?.name}"`
+                      }
+                      description={
+                        selectedCategory === 'all'
+                          ? 'Будьте первым, кто добавит блюдо!'
+                          : 'Попробуйте выбрать другую категорию'
+                      }
+                      icon="restaurant-outline"
+                      actionText={selectedCategory === 'all' ? 'Добавить блюдо' : 'Все блюда'}
+                      onAction={() => {
+                        if (selectedCategory === 'all') {
+                          router.push('/(tabs)/add-dish');
+                        } else {
+                          setSelectedCategory('all');
+                        }
+                      }}
+                    />
+                  }
       />
     </View>
   );
@@ -130,11 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -179,15 +199,5 @@ const styles = StyleSheet.create({
   dishesList: {
     padding: 16,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
+
 });

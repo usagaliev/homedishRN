@@ -4,6 +4,9 @@ import { useRouter } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../src/store';
 import { getDocument, getDocuments } from '../../src/services/db';
+import { EmptyState } from '../../src/components/EmptyState';
+import { LoadingSpinner } from '../../src/components/LoadingSpinner';
+import { ErrorState } from '../../src/components/ErrorState';
 import { ChatSession } from '../../src/utils/types';
 
 const statusLabels: Record<string, string> = {
@@ -19,6 +22,7 @@ const statusLabels: Record<string, string> = {
 export default function ChatsScreen() {
   const [chatSessions, setChatSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const user = useSelector((s: RootState) => s.auth.user);
   const router = useRouter();
 
@@ -27,6 +31,7 @@ export default function ChatsScreen() {
       if (!user) return;
       
       setLoading(true);
+      setError(null);
       try {
         // Получаем заказы пользователя
         const ordersQuery = user.role === 'buyer' 
@@ -63,6 +68,7 @@ export default function ChatsScreen() {
         setChatSessions(enrichedChats);
       } catch (error) {
         console.error('Error fetching chats:', error);
+        setError('Не удалось загрузить чаты');
       } finally {
         setLoading(false);
       }
@@ -114,19 +120,66 @@ export default function ChatsScreen() {
   );
 
   if (loading) {
+    return <LoadingSpinner message="Загрузка чатов..." />;
+  }
+
+  if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text>Загрузка чатов...</Text>
-      </View>
+      <ErrorState 
+        title="Ошибка загрузки чатов"
+        message={error}
+        onRetry={() => {
+          setLoading(true);
+          setError(null);
+          // Повторный вызов fetchChats
+          const fetchChats = async () => {
+            if (!user) return;
+            try {
+              const ordersQuery = user.role === 'buyer' 
+                ? `orders?buyerId=${user.id}`
+                : `orders?chefId=${user.id}`;
+              const orders = await getDocuments(ordersQuery);
+              const ordersWithChats = orders.filter((order: any) => order.chatEnabled !== false);
+              const enrichedChats = await Promise.all(
+                ordersWithChats.map(async (order: any) => {
+                  const [dish, otherUser] = await Promise.all([
+                    getDocument(`dishes/${order.dishId}`),
+                    getDocument(`users/${user.role === 'buyer' ? order.chefId : order.buyerId}`)
+                  ]);
+                  return {
+                    id: order.id,
+                    orderId: order.id,
+                    dish,
+                    otherUser,
+                    order,
+                    lastMessage: 'Нажмите, чтобы открыть чат',
+                    lastMessageTime: order.updatedAt || order.createdAt,
+                  };
+                })
+              );
+              enrichedChats.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+              setChatSessions(enrichedChats);
+            } catch (error) {
+              setError('Не удалось загрузить чаты');
+            } finally {
+              setLoading(false);
+            }
+          };
+          fetchChats();
+        }}
+      />
     );
   }
 
   if (chatSessions.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>У вас пока нет активных чатов</Text>
-        <Text style={styles.emptySubtext}>Чаты появятся после создания заказов</Text>
-      </View>
+      <EmptyState
+        title="У вас пока нет активных чатов"
+        description="Чаты появятся после создания заказов"
+        icon="chatbubbles-outline"
+        actionText="Перейти к блюдам"
+        onAction={() => router.push('/(tabs)/')}
+      />
     );
   }
 
@@ -147,23 +200,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f8f8',
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
+
   listContainer: {
     padding: 12,
   },

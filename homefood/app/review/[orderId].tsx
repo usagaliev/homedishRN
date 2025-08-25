@@ -9,7 +9,9 @@ import {
   Image, 
   Alert,
   KeyboardAvoidingView,
-  Platform 
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -128,8 +130,9 @@ export default function ReviewScreen() {
   const canSubmit = rating > 0 && text.trim().length > 0 && !loading;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.container}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Оставить отзыв</Text>
           {dish && (
@@ -201,8 +204,9 @@ export default function ReviewScreen() {
             {loading ? 'Отправка...' : 'Отправить отзыв'}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+              </ScrollView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 

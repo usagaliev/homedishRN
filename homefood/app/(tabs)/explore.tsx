@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/src/store';
 import { Button } from 'react-native';
+import { addTestData } from '@/src/utils/testData';
+import { runAppTests } from '@/src/utils/appTest';
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -25,6 +27,25 @@ export default function ExploreScreen() {
       Alert.alert('Firebase', 'Firebase подключен!');
     } catch (error) {
       Alert.alert('Ошибка Firebase', error instanceof Error ? error.message : 'Неизвестная ошибка');
+    }
+  };
+
+  const addTestDataToFirebase = async () => {
+    try {
+      await addTestData();
+      Alert.alert('Успех', 'Тестовые данные добавлены в Firebase!');
+    } catch (error) {
+      Alert.alert('Ошибка', error instanceof Error ? error.message : 'Не удалось добавить тестовые данные');
+    }
+  };
+
+  const runAutomatedTests = async () => {
+    try {
+      Alert.alert('Тестирование', 'Начинаем автоматизированное тестирование...');
+      await runAppTests();
+      Alert.alert('Тестирование завершено', 'Проверьте консоль для подробного отчета');
+    } catch (error) {
+      Alert.alert('Ошибка тестирования', error instanceof Error ? error.message : 'Неизвестная ошибка');
     }
   };
 
@@ -61,6 +82,8 @@ export default function ExploreScreen() {
           <Button title="Тест навигации" onPress={testNavigation} />
           <Button title="Тест Redux" onPress={testRedux} />
           <Button title="Тест Firebase" onPress={testFirebase} />
+          <Button title="Добавить тестовые данные" onPress={addTestDataToFirebase} />
+          <Button title="Автоматизированное тестирование" onPress={runAutomatedTests} />
         </ThemedView>
 
         <ThemedView style={styles.section}>
@@ -109,7 +132,10 @@ export default function ExploreScreen() {
             • Firebase инициализирован{'\n'}
             • Компоненты созданы{'\n'}
             • Навигация работает{'\n'}
-            • Авторизация настроена
+            • Авторизация настроена{'\n'}
+            • Чат система готова{'\n'}
+            • Рейтинги и отзывы готовы{'\n'}
+            • Все основные экраны созданы
           </ThemedText>
         </ThemedView>
       </ThemedView>

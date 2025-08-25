@@ -28,7 +28,8 @@ export async function updateMessageStatus(
     await updateDoc(messageRef, { status, updatedAt: Date.now() });
   } catch (error) {
     console.error('Error updating message status:', error);
-    throw error;
+    // Не выбрасываем ошибку, чтобы не прерывать работу чата
+    // Вместо этого логируем её для отладки
   }
 }
 
@@ -81,14 +82,18 @@ export async function markMessagesAsRead(orderId: string, userId: string): Promi
     const snapshot = await getDocs(q);
     
     const updatePromises = snapshot.docs
-      .map(doc => doc.data())
-      .filter(msg => msg.senderId !== userId && msg.status !== 'read')
-      .map(msg => updateMessageStatus(orderId, msg.id, 'read'));
+      .filter(doc => {
+        const msg = doc.data();
+        return msg.senderId !== userId && msg.status !== 'read';
+      })
+      .map(doc => updateMessageStatus(orderId, doc.id, 'read'));
     
-    await Promise.all(updatePromises);
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+    }
   } catch (error) {
     console.error('Error marking messages as read:', error);
-    throw error;
+    // Не выбрасываем ошибку, чтобы не прерывать работу чата
   }
 }
 

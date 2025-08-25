@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../features/auth/authSlice';
 import { getDocument } from '../services/db';
 import { AppUser } from '../utils/types';
+import { auth } from '../services/firebase';
 
 export function useAuthListener() {
   const dispatch = useDispatch();
   useEffect(() => {
-    const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
